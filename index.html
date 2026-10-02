@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#17130f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RodeoCheck" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="referrer" content="no-referrer" />
+  <title>RodeoCheck V2</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-mark" aria-hidden="true">R</div>
+        <div>
+          <div class="eyebrow">RODEO MOTORS • PRIVATE TOOL</div>
+          <h1>RodeoCheck <span class="version-pill">V2</span></h1>
+        </div>
+      </div>
+      <button id="installBtn" class="ghost-btn hidden" type="button">Install</button>
+    </header>
+
+    <main id="main" class="main-content">
+      <section class="screen active" data-screen="home">
+        <div class="hero-card">
+          <div class="hero-copy">
+            <span class="pill bronze">DEALER WORKSPACE</span>
+            <h2>History, condition and deal economics in one report.</h2>
+            <p>Decode a VIN, record title/history checks, calculate your real all-in acquisition cost, plan recon, inspect the vehicle, and see projected gross before you commit.</p>
+          </div>
+          <div class="hero-actions">
+            <button class="primary-btn" data-go="vin">Run VIN + deal check</button>
+            <button class="secondary-btn" data-go="contract">Scan paperwork</button>
+          </div>
+        </div>
+
+        <div class="stat-grid home-stats">
+          <article class="stat-card"><span class="stat-label">Vehicle reports</span><strong id="homeReportCount">0</strong></article>
+          <article class="stat-card"><span class="stat-label">Target gross met</span><strong id="homeTargetCount">0</strong></article>
+          <article class="stat-card"><span class="stat-label">Contract scans</span><strong id="homeContractCount">0</strong></article>
+        </div>
+
+        <section class="panel" id="portfolioPanel">
+          <div class="section-head">
+            <div><span class="eyebrow">DEAL SNAPSHOT</span><h3>Saved inventory economics</h3></div>
+          </div>
+          <div class="metric-strip four" id="portfolioMetrics">
+            <div class="metric-mini"><span>Total planned cost</span><strong>—</strong></div>
+            <div class="metric-mini"><span>Projected retail</span><strong>—</strong></div>
+            <div class="metric-mini"><span>Projected gross</span><strong>—</strong></div>
+            <div class="metric-mini"><span>Avg gross / unit</span><strong>—</strong></div>
+          </div>
+          <p class="muted small">Only reports with enough entered deal data are included.</p>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div><span class="eyebrow">RECENT</span><h3>My vehicle reports</h3></div>
+            <button class="text-btn" data-go="saved">View all</button>
+          </div>
+          <div id="recentReports" class="stack-list empty-state">No saved reports yet.</div>
+        </section>
+
+        <section class="panel info-panel">
+          <div class="icon-circle">i</div>
+          <div>
+            <h3>What RodeoCheck can and cannot prove</h3>
+            <p>Public NHTSA data can decode the vehicle and surface safety information. Complete title, accident, insurance-loss, service, ownership and commercial auction-history datasets are not universally free. RodeoCheck keeps those gaps explicit instead of treating “no result” as a clean history.</p>
+          </div>
+        </section>
+      </section>
+
+      <section class="screen" data-screen="vin">
+        <div class="screen-heading">
+          <span class="eyebrow">VEHICLE INTELLIGENCE</span>
+          <h2>VIN + auction decision workspace</h2>
+          <p>Everything needed for a dealer first-pass review: public vehicle data, manual history checks, auction math, inspection findings, recon and notes.</p>
+        </div>
+
+        <section class="panel search-panel">
+          <label for="vinInput">VIN</label>
+          <div class="input-row">
+            <input id="vinInput" maxlength="17" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="1HGCR2F56HA285327" />
+            <button id="decodeVinBtn" class="primary-btn">Check</button>
+          </div>
+          <div class="scan-row">
+            <label class="upload-btn" for="vinPhotoInput">📷 Scan VIN photo</label>
+            <input id="vinPhotoInput" type="file" accept="image/*" capture="environment" hidden />
+            <span id="vinStatus" class="muted">No VIN loaded.</span>
+          </div>
+        </section>
+
+        <div id="vinLoading" class="loading-card hidden"><div class="spinner"></div><span>Building dealer report…</span></div>
+        <div id="vinReport" class="hidden"></div>
+      </section>
+
+      <section class="screen" data-screen="contract">
+        <div class="screen-heading">
+          <span class="eyebrow">PAPERWORK SCANNER</span>
+          <h2>Read the numbers before you sign.</h2>
+          <p>Photograph a buyer’s order, worksheet or retail installment contract. OCR runs in your browser and flags common dealer charges and finance terms for review.</p>
+        </div>
+
+        <section class="panel">
+          <div class="contract-upload">
+            <label class="upload-drop" for="contractImageInput">
+              <span class="upload-icon">📄</span>
+              <strong>Take photos or choose document images</strong>
+              <span>Select up to 12 pages. RodeoCheck does not intentionally store the source images after processing.</span>
+            </label>
+            <input id="contractImageInput" type="file" accept="image/*" multiple hidden />
+            <div id="contractPreviewGrid" class="contract-preview-grid hidden"></div>
+          </div>
+          <div id="ocrProgressWrap" class="progress-wrap hidden">
+            <div class="progress-track"><div id="ocrProgress" class="progress-fill"></div></div>
+            <span id="ocrProgressText">Reading document…</span>
+          </div>
+          <label for="contractText">Extracted / pasted text</label>
+          <textarea id="contractText" rows="12" placeholder="OCR text will appear here, or paste the dealer worksheet/contract text manually."></textarea>
+          <div class="button-row">
+            <button id="ocrBtn" class="secondary-btn">Run OCR</button>
+            <button id="analyzeContractBtn" class="primary-btn">Analyze charges</button>
+          </div>
+        </section>
+        <div id="contractAnalysis"></div>
+      </section>
+
+      <section class="screen" data-screen="saved">
+        <div class="screen-heading">
+          <span class="eyebrow">MY REPORTS</span>
+          <h2>Saved locally on this device</h2>
+          <p>Search your saved vehicles, reopen a report, or export an inventory CSV. Make a backup before clearing Safari/site data.</p>
+        </div>
+        <div class="tabs-inline">
+          <button class="chip active" data-saved-tab="vin">Vehicles</button>
+          <button class="chip" data-saved-tab="contract">Contracts</button>
+        </div>
+        <div id="savedVehicleTools" class="panel compact-panel">
+          <input id="savedSearch" class="search-input" placeholder="Search VIN, model, auction, stock #…" />
+          <div class="button-row tight">
+            <button id="exportInventoryCsvBtn" class="secondary-btn">Export inventory CSV</button>
+          </div>
+        </div>
+        <div id="savedContent" class="stack-list"></div>
+      </section>
+
+      <section class="screen" data-screen="settings">
+        <div class="screen-heading">
+          <span class="eyebrow">SETTINGS & BACKUP</span>
+          <h2>Customize your private copy</h2>
+        </div>
+        <section class="panel form-stack">
+          <label>Default state
+            <select id="stateSelect">
+              <option value="TX">Texas</option>
+              <option value="GENERIC">Generic / no state-law rules</option>
+            </select>
+          </label>
+          <label>Language for contract script
+            <select id="languageSelect">
+              <option value="en">English</option>
+              <option value="es">Español</option>
+            </select>
+          </label>
+          <label>Default target front-end gross
+            <div class="money-input"><span>$</span><input id="defaultTargetGross" type="number" min="0" step="100" value="4000" /></div>
+          </label>
+          <label>Texas documentary-fee review threshold
+            <div class="money-input"><span>$</span><input id="docFeeThreshold" type="number" min="0" step="1" value="225" /></div>
+          </label>
+          <label class="toggle-row"><span>Auto-save completed VIN reports</span><input id="autoSaveToggle" type="checkbox" checked /></label>
+          <button id="saveSettingsBtn" class="primary-btn">Save settings</button>
+        </section>
+
+        <section class="panel">
+          <div class="section-head"><div><span class="eyebrow">BACKUP</span><h3>Protect your data</h3></div></div>
+          <p class="muted">Because this build has no server/account, your saved reports live in this browser. Export a backup periodically.</p>
+          <div class="button-row">
+            <button id="backupBtn" class="secondary-btn">Export full backup</button>
+            <label class="secondary-btn file-button" for="restoreInput">Restore backup</label>
+            <input id="restoreInput" type="file" accept="application/json,.json" hidden />
+          </div>
+        </section>
+
+        <section class="panel install-panel">
+          <div class="section-head"><div><span class="eyebrow">IPHONE APP</span><h3>Add RodeoCheck to your Home Screen</h3></div></div>
+          <ol class="install-steps">
+            <li>Host this folder on an HTTPS site such as GitHub Pages.</li>
+            <li>Open the RodeoCheck URL in <strong>Safari</strong> on your iPhone.</li>
+            <li>Tap the <strong>Share</strong> button.</li>
+            <li>Choose <strong>Add to Home Screen</strong>.</li>
+            <li>Tap <strong>Add</strong>. RodeoCheck will launch like a standalone app.</li>
+          </ol>
+          <p class="muted small">On iPhone, the normal web “Install” prompt may not appear; Safari → Share → Add to Home Screen is the reliable method.</p>
+        </section>
+
+        <section class="panel danger-panel">
+          <h3>Local data</h3>
+          <p>Delete all RodeoCheck vehicle reports, contract analyses and settings stored in this browser.</p>
+          <button id="clearDataBtn" class="danger-btn">Erase local data</button>
+        </section>
+
+        <section class="panel info-panel">
+          <div class="icon-circle">↗</div>
+          <div>
+            <h3>Full-history sources remain separate</h3>
+            <p>For title-brand/odometer history, use an approved NMVTIS provider. For free participating-insurer theft/salvage/flood screening, use NICB VINCheck. RodeoCheck links to these services rather than scraping, bypassing limits or pretending to have proprietary data.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <button class="nav-item active" data-go="home"><span>⌂</span><small>Home</small></button>
+      <button class="nav-item" data-go="vin"><span>⌕</span><small>VIN</small></button>
+      <button class="nav-item" data-go="contract"><span>▤</span><small>Contract</small></button>
+      <button class="nav-item" data-go="saved"><span>▣</span><small>Reports</small></button>
+      <button class="nav-item" data-go="settings"><span>⚙</span><small>Settings</small></button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
